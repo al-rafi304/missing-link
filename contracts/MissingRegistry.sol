@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.2 <0.9.0;
 
-import "contracts/UserManagement.sol"
+import "contracts/UserManagement.sol";
 
 contract MissingRegistry {
 
@@ -41,6 +41,11 @@ contract MissingRegistry {
         _;
     }
 
+    modifier validCaseId(uint _case) {
+        require(_case > 0 && _case < caseCounter, "Invalid case number");
+        _;
+    }
+
     function addMissingPerson(
         string memory _name,
         uint8 _age,
@@ -65,13 +70,26 @@ contract MissingRegistry {
         caseCounter++;
     }
 
-    function updateStatus(uint _case, Status _status) external onlyAdmin {
-        require(_case > 0 && _case < caseCounter, "Invalid case number");
-
+    function updateStatus(uint _case, Status _status) external onlyAdmin validCaseId(_case) {
         MissingPerson storage mp = missingPersons[_case];
-        require(mp.status != Status.Found, "Cannot change status for found person");
+        require(mp.status == Status.Missing, "Cannot change status for found person");
         require(_status == Status.Found, "Can only update the status to found");
 
         mp.status = _status;
     }
+
+    function assignInvestigator(uint _case, address _investigator) external onlyAdmin validCaseId(_case){
+        require(userManagement.isInvestigator(_investigator), "Address is not an investigator");
+
+        MissingPerson storage mp = missingPersons[_case];
+        require(mp.status == Status.Missing, "Cannot assign investigator for found person");
+        require(mp.investigatorAddress == address(0), "The person has already been assigned to an investigator");
+        
+        mp.investigatorAddress = _investigator;
+    }
+
+    function getMissingPerson(uint _case) external view validCaseId(_case) returns (MissingPerson memory) {
+        return missingPersons[_case];
+    }
+
 }
