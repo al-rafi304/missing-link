@@ -92,4 +92,6 @@ contract MissingRegistry {
         return missingPersons[_case];
     }
 
+    // TODO: Filter missing persons
+
 }
