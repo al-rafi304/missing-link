@@ -25,6 +25,7 @@ contract MissingRegistry {
 
     uint public caseCounter = 1;
     mapping(uint => MissingPerson) missingPersons;
+    mapping(Division => uint[]) missingByDivision;
     UserManagement public userManagement;
 
     constructor(address _userManagementAddress) {
@@ -67,7 +68,49 @@ contract MissingRegistry {
             investigatorAddress: address(0),
             reporterAddress: msg.sender
         });
+        missingByDivision[_lastSeenLocation].push(caseCounter);
         caseCounter++;
+
+    }
+
+    function getMissingPerson(uint _case) external view validCaseId(_case) returns (MissingPerson memory) {
+        return missingPersons[_case];
+    }
+
+    function filterByDivision(Division _division) public view returns (uint[] memory){
+        return missingByDivision[_division];
+    }
+
+    function getSortedDivision(bool ascending) external view returns (Division[] memory, uint[] memory) {
+        Division[] memory sortedDivisions;
+        uint[] memory counts;
+
+        for (uint8 i = 0; i < 8; i++) {
+            sortedDivisions[i] = Division(i);
+            counts[i] = filterByDivision(Division(i)).length;
+        }
+
+        for (uint8 i = 0; i < 8; i++) {
+            for (uint8 j = 0; j < 7 - i; j++) {
+                bool shouldSwap = ascending
+                    ? counts[j] > counts[j + 1]
+                    : counts[j] < counts[j + 1];
+
+                if (shouldSwap) {
+                    // Swap counts
+                    uint tempCount = counts[j];
+                    counts[j] = counts[j + 1];
+                    counts[j + 1] = tempCount;
+
+                    // Swap divisions
+                    Division tempDiv = sortedDivisions[j];
+                    sortedDivisions[j] = sortedDivisions[j + 1];
+                    sortedDivisions[j + 1] = tempDiv;
+                }
+            }
+        }
+
+        return (sortedDivisions, counts);
     }
 
     function updateStatus(uint _case, Status _status) external onlyAdmin validCaseId(_case) {
@@ -87,11 +130,5 @@ contract MissingRegistry {
         
         mp.investigatorAddress = _investigator;
     }
-
-    function getMissingPerson(uint _case) external view validCaseId(_case) returns (MissingPerson memory) {
-        return missingPersons[_case];
-    }
-
-    // TODO: Filter missing persons
 
 }
