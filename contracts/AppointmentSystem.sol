@@ -55,6 +55,8 @@ contract AppointmentSystem {
             timestamp: _timestamp
         }));
         appointmentId++;
+
+        payable(userManager.owner()).transfer(msg.value);
     }
 
     function getAppointments(address investigator) public view returns (Appointment[] memory) {
