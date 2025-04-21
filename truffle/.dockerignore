@@ -1,0 +1,3 @@
+node_modules
+build/contracts # Although writing elsewhere, good to ignore just in case
+debug.log

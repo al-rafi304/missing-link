@@ -1,0 +1,53 @@
+services:
+  ganache:
+    image: trufflesuite/ganache:latest
+    ports:
+      - "8545:8545"
+    command: -h 0.0.0.0 --db /var/lib/ganache -s "dummy" # Listen on all interfaces
+    networks:
+      - app-network
+
+  truffle:
+    build:
+      context: .
+      dockerfile: truffle/Dockerfile
+    working_dir: /app/truffle
+    environment:
+      - CONTAINER_GANACHE_HOST=ganache
+    volumes:
+      - ./truffle:/app/truffle
+      - ./client:/app/client # Mount the client source code (specifically where artifacts need to go)
+      - /app/truffle/node_modules # Prevent host node_modules from overwriting container's node_modules
+    depends_on:
+      - ganache
+    command: >
+      sh -c "while ! nc -z ganache 8545; do echo 'Waiting for Ganache...'; sleep 1; done;
+             echo 'Ganache is up, running migrations...';
+             # Ensure we are in the correct directory before running truffle commands
+             cd /app/truffle &&
+             truffle compile --network development --all && truffle migrate --network development --reset --all &&
+             echo 'Migration complete. Truffle artifacts written to host ./client/src/contracts/. Keeping container alive.';
+             tail -f /dev/null"
+    networks:
+      - app-network
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    working_dir: /app
+    volumes:
+      - ./client:/app # Mount client source code for development changes (hot-reloading)
+      - /app/node_modules # Prevent host node_modules from overwriting container's node_modules
+    ports:
+      - "8080:8080"
+    depends_on:
+      - truffle
+    environment:
+      - CHOKIDAR_USEPOLLING=true # For hot-reloading in Docker
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
