@@ -2,8 +2,8 @@
 
 pragma solidity >=0.8.2 <0.9.0;
 
-import "contracts/UserManagement.sol";
-import "contracts/MissingRegistry.sol";
+import "./UserManagement.sol";
+import "./MissingRegistry.sol";
 
 contract AppointmentSystem {
 
