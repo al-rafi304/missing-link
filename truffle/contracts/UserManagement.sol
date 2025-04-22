@@ -15,6 +15,7 @@ contract UserManagement {
     }
 
     mapping(address => User) private users;
+    User[] private investigators;
     address public owner;
 
     constructor() {
@@ -35,19 +36,28 @@ contract UserManagement {
             require(msg.sender == owner, "Only owner can register as Admin");
         }
 
-        users[msg.sender] = User({
+        User memory user = User({
             nid: _nid,
             name: _name,
             role: _role,
             walletAddress: msg.sender,
             isRegistered: true
         });
+        users[msg.sender] = user;
+
+        if (_role == Role.Investigator) {
+            investigators.push(user);
+        }
 
     }
 
     function getUserDetails(address _user) external view returns (User memory){
         require(users[_user].isRegistered, "User not registered");
         return users[_user];
+    }
+
+    function getInvestigators() external view returns (User[] memory) {
+        return investigators;
     }
 
     function isAdmin(address _user) external view returns (bool) {

@@ -17,13 +17,18 @@ const ViewAppointments = () => {
     // This is a mock function since we don't have a way to list all investigators
     // In a real app, you would need to implement a way to list all investigators
     const mockFetchInvestigators = async () => {
-      // For demo purposes, we'll just use some mock addresses
-      setInvestigators([
-        { address: "0x123...", name: "Investigator 1" },
-        { address: "0x456...", name: "Investigator 2" },
-        { address: "0x789...", name: "Investigator 3" },
-      ])
-    }
+        // For demo purposes, we'll just use some mock addresses
+        try {
+          const investigators = await contracts.userManagement.methods.getInvestigators().call()
+          setInvestigators(investigators)
+        } catch {
+            setInvestigators([
+                { address: "0x123...", name: "Investigator 1" },
+                { address: "0x456...", name: "Investigator 2" },
+                { address: "0x789...", name: "Investigator 3" },
+            ])
+        }
+      }
 
     mockFetchInvestigators()
   }, [])
@@ -94,8 +99,8 @@ const ViewAppointments = () => {
           >
             <option value="">Select Investigator</option>
             {investigators.map((inv, index) => (
-              <option key={index} value={inv.address}>
-                {inv.name} ({inv.address})
+              <option key={index} value={inv.walletAddress}>
+                {inv.name}
               </option>
             ))}
           </select>
