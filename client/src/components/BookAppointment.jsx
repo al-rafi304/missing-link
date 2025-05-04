@@ -1,27 +1,25 @@
 "use client"
 
 import { useState, useContext, useEffect } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
 import EthContext from "../contexts/EthContext/EthContext"
 
 const BookAppointment = () => {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const queryParams = new URLSearchParams(location.search)
-  const caseIdFromUrl = queryParams.get("caseId")
-
   const { state } = useContext(EthContext)
-  const { accounts, contracts } = state
+  const { accounts, contracts, web3 } = state
 
   const [isReporter, setIsReporter] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState({ type: "", content: "" })
   const [investigators, setInvestigators] = useState([])
-  const [caseDetails, setCaseDetails] = useState(null)
+  const [admins, setAdmins] = useState([])
+  const [appointmentFee, setAppointmentFee] = useState("0")
 
   const [formData, setFormData] = useState({
-    caseId: caseIdFromUrl || "",
-    investigatorAddress: "",
+    caseId: "",
+    investigator: "",
+    admin: "",
+    date: "",
+    time: "",
   })
 
   useEffect(() => {
@@ -36,38 +34,49 @@ const BookAppointment = () => {
       }
     }
 
-    const fetchInvestigators = async () => {
-      if (!contracts || !contracts.userManagement) return
+    const fetchAppointmentFee = async () => {
+      if (!contracts.appointmentSystem) return
 
+      try {
+        const fee = await contracts.appointmentSystem.methods.appointmentFee().call()
+        setAppointmentFee(fee)
+      } catch (error) {
+        console.error("Error fetching appointment fee:", error)
+      }
+    }
+
+    // This is a mock function since we don't have a way to list all investigators
+    // In a real app, you would need to implement a way to list all investigators
+    const mockFetchInvestigators = async () => {
+      // For demo purposes, we'll just use some mock addresses
       try {
         const investigators = await contracts.userManagement.methods.getInvestigators().call()
         setInvestigators(investigators)
-      } catch (error) {
-        console.error("Error fetching investigators:", error)
-        // Fallback to mock data if needed
+      } catch {
         setInvestigators([
-          { walletAddress: "0x123...", name: "Investigator 1" },
-          { walletAddress: "0x456...", name: "Investigator 2" },
-          { walletAddress: "0x789...", name: "Investigator 3" },
+          { address: "0x123...", name: "Investigator 1" },
+          { address: "0x456...", name: "Investigator 2" },
+          { address: "0x789...", name: "Investigator 3" },
         ])
       }
     }
 
-    const fetchCaseDetails = async () => {
-      if (!caseIdFromUrl || !contracts || !contracts.missingRegistry) return
-
+    // Similarly, this is a mock function for admins
+    const mockFetchAdmins = async () => {
       try {
-        const details = await contracts.missingRegistry.methods.getMissingPerson(caseIdFromUrl).call()
-        setCaseDetails(details)
+        const owner = await contracts.userManagement.methods.owner().call()
+        setAdmins([{ address: owner, name: "System Admin" }])
       } catch (error) {
-        console.error("Error fetching case details:", error)
+        console.error("Error fetching admin:", error)
+        setAdmins([{ address: "0xabc...", name: "Admin 1" }])
       }
     }
 
     checkUserRole()
-    fetchInvestigators()
-    fetchCaseDetails()
-  }, [accounts, contracts, caseIdFromUrl])
+    fetchAppointmentFee()
+    mockFetchInvestigators()
+    mockFetchAdmins()
+  }, [accounts, contracts])
 
   const handleChange = (e) => {
     setFormData({
@@ -90,9 +99,16 @@ const BookAppointment = () => {
         throw new Error("Only reporters can book appointments")
       }
 
+      // Convert date and time to timestamp
+      const dateTime = new Date(`${formData.date}T${formData.time}`)
+      const timestamp = Math.floor(dateTime.getTime() / 1000)
+
       await contracts.appointmentSystem.methods
-        .bookAppointment(formData.caseId, formData.investigatorAddress)
-        .send({ from: accounts[0] })
+        .bookAppointment(formData.caseId, formData.investigator, timestamp)
+        .send({
+          from: accounts[0],
+          value: appointmentFee,
+        })
 
       setMessage({
         type: "success",
@@ -102,11 +118,11 @@ const BookAppointment = () => {
       // Reset form
       setFormData({
         caseId: "",
-        investigatorAddress: "",
+        investigator: "",
+        admin: "",
+        date: "",
+        time: "",
       })
-
-      // Navigate to the details page after successful booking
-      navigate(`/missing/${formData.caseId}`)
     } catch (error) {
       console.error("Error booking appointment:", error)
       setMessage({
@@ -132,7 +148,7 @@ const BookAppointment = () => {
 
   return (
     <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
-      <h2 className="text-2xl font-bold mb-6 text-center">Book Appointment</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">Book an Appointment</h2>
 
       {message.content && (
         <div
@@ -142,23 +158,11 @@ const BookAppointment = () => {
         </div>
       )}
 
-      {caseDetails && (
-        <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-semibold text-lg mb-2">Case Information</h3>
-          <p>
-            <span className="font-medium">Name:</span> {caseDetails.name}
-          </p>
-          <p>
-            <span className="font-medium">Age:</span> {caseDetails.age}
-          </p>
-          <p>
-            <span className="font-medium">Status:</span>{" "}
-            <span className={caseDetails.status === "0" ? "text-red-600" : "text-green-600"}>
-              {caseDetails.status === "0" ? "Missing" : "Found"}
-            </span>
-          </p>
-        </div>
-      )}
+      <div className="mb-4 p-4 bg-blue-50 rounded">
+        <p className="text-blue-700">
+          <strong>Appointment Fee:</strong> {web3 ? web3.utils.fromWei(appointmentFee, "ether") : "0"} ETH
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -174,29 +178,80 @@ const BookAppointment = () => {
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             min="1"
             required
-            readOnly={!!caseIdFromUrl}
           />
         </div>
 
-        <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="investigatorAddress">
-            Select Investigator
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="investigator">
+            Investigator
           </label>
           <select
-            id="investigatorAddress"
-            name="investigatorAddress"
-            value={formData.investigatorAddress}
+            id="investigator"
+            name="investigator"
+            value={formData.investigator}
             onChange={handleChange}
             className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             required
           >
-            <option value="">Select an investigator</option>
-            {investigators.map((investigator, index) => (
-              <option key={index} value={investigator.walletAddress}>
-                {investigator.name}
+            <option value="">Select Investigator</option>
+            {investigators.map((inv, index) => (
+              <option key={index} value={inv.walletAddress}>
+                {inv.name}
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="admin">
+            Admin (Payment Recipient)
+          </label>
+          <select
+            id="admin"
+            name="admin"
+            value={formData.admin}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
+          >
+            <option value="">Select Admin</option>
+            {admins.map((admin, index) => (
+              <option key={index} value={admin.address}>
+                {admin.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="date">
+            Date
+          </label>
+          <input
+            type="date"
+            id="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            min={new Date().toISOString().split("T")[0]}
+            required
+          />
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="time">
+            Time
+          </label>
+          <input
+            type="time"
+            id="time"
+            name="time"
+            value={formData.time}
+            onChange={handleChange}
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required
+          />
         </div>
 
         <div className="flex items-center justify-center">
