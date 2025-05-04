@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useContext, useEffect } from "react"
+import { useState, useContext, useEffect, useCallback } from "react"
 import EthContext from "../contexts/EthContext/EthContext"
 
 const SearchMissingPerson = () => {
   const { state } = useContext(EthContext)
-  const { accounts, contracts } = state
+  const { contracts } = state
 
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState({ type: "", content: "" })
@@ -16,11 +16,7 @@ const SearchMissingPerson = () => {
 
   const divisionNames = ["Dhaka", "Chittagong", "Rajshahi", "Khulna", "Barisal", "Sylhet", "Rangpur", "Mymensingh"]
 
-  useEffect(() => {
-    fetchDivisionStats()
-  }, [contracts])
-
-  const fetchDivisionStats = async () => {
+  const fetchDivisionStats = useCallback(async () => {
     if (!contracts || !contracts.missingRegistry) return
 
     try {
@@ -35,7 +31,11 @@ const SearchMissingPerson = () => {
     } catch (error) {
       console.error("Error fetching division stats:", error)
     }
-  }
+  }, [contracts])
+
+  useEffect(() => {
+    fetchDivisionStats()
+  }, [contracts, fetchDivisionStats])
 
   const handleSearch = async (e) => {
     e.preventDefault()

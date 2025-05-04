@@ -5,7 +5,7 @@ import EthContext from "../contexts/EthContext/EthContext"
 
 const ViewAppointments = () => {
   const { state } = useContext(EthContext)
-  const { accounts, contracts } = state
+  const { contracts } = state
 
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState({ type: "", content: "" })
@@ -17,21 +17,26 @@ const ViewAppointments = () => {
     // This is a mock function since we don't have a way to list all investigators
     // In a real app, you would need to implement a way to list all investigators
     const mockFetchInvestigators = async () => {
-        // For demo purposes, we'll just use some mock addresses
-        try {
+      // For demo purposes, we'll just use some mock addresses
+      try {
+        if (contracts && contracts.userManagement && contracts.userManagement.methods) {
           const investigators = await contracts.userManagement.methods.getInvestigators().call()
           setInvestigators(investigators)
-        } catch {
-            setInvestigators([
-                { address: "0x123...", name: "Investigator 1" },
-                { address: "0x456...", name: "Investigator 2" },
-                { address: "0x789...", name: "Investigator 3" },
-            ])
+        } else {
+          throw new Error("Contract not available")
         }
+      } catch (error) {
+        console.error("Error fetching investigators:", error)
+        setInvestigators([
+          { address: "0x123...", name: "Investigator 1" },
+          { address: "0x456...", name: "Investigator 2" },
+          { address: "0x789...", name: "Investigator 3" },
+        ])
       }
+    }
 
     mockFetchInvestigators()
-  }, [])
+  }, [contracts])
 
   const fetchAppointments = async () => {
     if (!selectedInvestigator || !contracts.appointmentSystem) return
