@@ -53,11 +53,11 @@ const BookAppointment = () => {
         const investigators = await contracts.userManagement.methods.getInvestigators().call()
         setInvestigators(investigators)
       } catch {
-          setInvestigators([
-              { address: "0x123...", name: "Investigator 1" },
-              { address: "0x456...", name: "Investigator 2" },
-              { address: "0x789...", name: "Investigator 3" },
-          ])
+        setInvestigators([
+          { address: "0x123...", name: "Investigator 1" },
+          { address: "0x456...", name: "Investigator 2" },
+          { address: "0x789...", name: "Investigator 3" },
+        ])
       }
     }
 

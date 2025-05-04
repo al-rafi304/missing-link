@@ -1,5 +1,5 @@
 "use client"
-import React from "react"
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
 import { EthProvider } from "./contexts/EthContext"
 import Navbar from "./components/Navbar"
@@ -10,6 +10,7 @@ import AssignInvestigator from "./components/AssignInvestigator"
 import SearchMissingPerson from "./components/SearchMissingPerson"
 import BookAppointment from "./components/BookAppointment"
 import ViewAppointments from "./components/ViewAppointments"
+import MissingPersonDetails from "./components/MissingPersonDetails"
 import Home from "./components/Home"
 import { Component } from "react"
 
@@ -69,6 +70,7 @@ function App() {
                 <Route path="/update-status" element={<UpdateMissingStatus />} />
                 <Route path="/assign-investigator" element={<AssignInvestigator />} />
                 <Route path="/search" element={<SearchMissingPerson />} />
+                <Route path="/missing/:id" element={<MissingPersonDetails />} />
                 <Route path="/book-appointment" element={<BookAppointment />} />
                 <Route path="/appointments" element={<ViewAppointments />} />
               </Routes>
