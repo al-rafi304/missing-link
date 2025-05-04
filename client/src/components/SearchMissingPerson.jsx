@@ -227,14 +227,14 @@ const SearchMissingPerson = () => {
                     <td className="py-3 px-6 text-left">
                       <span
                         className={`py-1 px-3 rounded-full text-xs ${
-                          Number(result.age) < 18
+                          result.urgency === "2"
                             ? "bg-red-200 text-red-700"
-                            : Number(result.age) > 50
+                            : result.urgency === "1"
                               ? "bg-yellow-200 text-yellow-700"
                               : "bg-blue-200 text-blue-700"
                         }`}
                       >
-                        {Number(result.age) < 18 ? "High" : Number(result.age) > 50 ? "Medium" : "Low"}
+                        {result.urgency === "2" ? "High" : result.urgency === "1" ? "Medium" : "Low"}
                       </span>
                     </td>
                     <td className="py-3 px-6 text-left">{divisionNames[result.lastSeen]}</td>
