@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useContext, useEffect, useCallback } from "react"
+import { Link } from "react-router-dom"
 import EthContext from "../contexts/EthContext/EthContext"
 
 const SearchMissingPerson = () => {
@@ -205,6 +206,7 @@ const SearchMissingPerson = () => {
                   <th className="py-3 px-6 text-left">Status</th>
                   <th className="py-3 px-6 text-left">Urgency</th>
                   <th className="py-3 px-6 text-left">Division</th>
+                  <th className="py-3 px-6 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody className="text-gray-600 text-sm">
@@ -225,17 +227,25 @@ const SearchMissingPerson = () => {
                     <td className="py-3 px-6 text-left">
                       <span
                         className={`py-1 px-3 rounded-full text-xs ${
-                          result.urgency === "2"
+                          Number(result.age) < 18
                             ? "bg-red-200 text-red-700"
-                            : result.urgency === "1"
+                            : Number(result.age) > 50
                               ? "bg-yellow-200 text-yellow-700"
                               : "bg-blue-200 text-blue-700"
                         }`}
                       >
-                        {result.urgency === "2" ? "High" : result.urgency === "1" ? "Medium" : "Low"}
+                        {Number(result.age) < 18 ? "High" : Number(result.age) > 50 ? "Medium" : "Low"}
                       </span>
                     </td>
                     <td className="py-3 px-6 text-left">{divisionNames[result.lastSeen]}</td>
+                    <td className="py-3 px-6 text-left">
+                      <Link
+                        to={`/missing/${result.id}`}
+                        className="bg-blue-500 hover:bg-blue-700 text-white text-xs py-1 px-2 rounded"
+                      >
+                        View Details
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
