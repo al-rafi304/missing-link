@@ -13,7 +13,6 @@ const MissingPersonDetails = () => {
   const [error, setError] = useState(null)
   const [personDetails, setPersonDetails] = useState(null)
   const [investigatorDetails, setInvestigatorDetails] = useState(null)
-  const [appointmentDetails, setAppointmentDetails] = useState(null)
 
   const divisionNames = ["Dhaka", "Chittagong", "Rajshahi", "Khulna", "Barisal", "Sylhet", "Rangpur", "Mymensingh"]
 
@@ -29,7 +28,7 @@ const MissingPersonDetails = () => {
         // Fetch missing person details
         const details = await contracts.missingRegistry.methods.getMissingPerson(id).call()
         setPersonDetails(details)
-
+        console.log(details)
         // Check if investigator is assigned
         if (
           details.investigatorAddress &&
@@ -42,15 +41,6 @@ const MissingPersonDetails = () => {
               .call()
             setInvestigatorDetails(investigator)
 
-            // Fetch appointment details if available
-            try {
-              const appointments = await contracts.appointmentSystem.methods.getAppointmentsByCaseId(id).call()
-              if (appointments && appointments.length > 0) {
-                setAppointmentDetails(appointments[0]) // Get the first appointment for this case
-              }
-            } catch (error) {
-              console.error("Error fetching appointment details:", error)
-            }
           } catch (error) {
             console.error("Error fetching investigator details:", error)
           }
@@ -198,10 +188,10 @@ const MissingPersonDetails = () => {
               </div>
             </div>
 
-            <div className="mb-4">
+            {/* <div className="mb-4">
               <p className="text-gray-600 text-sm">Report Date</p>
               <p className="font-medium">{formatTimestamp(personDetails.timestamp)}</p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -236,7 +226,7 @@ const MissingPersonDetails = () => {
             )}
           </div>
 
-          <div>
+          {/* <div>
             <h4 className="font-medium text-gray-700 mb-2">Appointment Details</h4>
             {appointmentDetails ? (
               <div className="bg-white p-4 rounded border">
@@ -258,7 +248,7 @@ const MissingPersonDetails = () => {
                 <p className="text-yellow-700">No appointment scheduled yet</p>
               </div>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
 
