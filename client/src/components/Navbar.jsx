@@ -10,6 +10,7 @@ const Navbar = () => {
   } = useEth()
   const [userRole, setUserRole] = useState(null)
   const [isRegistered, setIsRegistered] = useState(false)
+  const [userName, setUserName] = useState(null)
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -21,6 +22,7 @@ const Navbar = () => {
           const userDetails = await contracts.userManagement.methods.getUserDetails(accounts[0]).call()
           setIsRegistered(true)
           setUserRole(Number.parseInt(userDetails.role))
+          setUserName(userDetails.name)
         } catch (error) {
           // User not registered
           setIsRegistered(false)
@@ -38,7 +40,7 @@ const Navbar = () => {
     <nav className="bg-blue-600 text-white p-4">
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="text-xl font-bold">
-          Missing Persons DApp
+          Missing Link
         </Link>
         <div className="flex space-x-4">
           <Link to="/" className="hover:text-blue-200">
@@ -93,8 +95,7 @@ const Navbar = () => {
         <div className="text-sm">
           {accounts ? (
             <span>
-              Connected: {accounts[0].substring(0, 6)}...
-              {accounts[0].substring(38)}
+              Connected: { isRegistered ? userName : accounts[0].substring(0, 6)}
             </span>
           ) : (
             <span>Not connected</span>
