@@ -18,24 +18,61 @@ const SearchMissingPerson = () => {
   const divisionNames = ["Dhaka", "Chittagong", "Rajshahi", "Khulna", "Barisal", "Sylhet", "Rangpur", "Mymensingh"]
 
   const fetchDivisionStats = useCallback(async () => {
-    if (!contracts || !contracts.missingRegistry) return
+    if (!contracts || !contracts.missingRegistry) {
+      console.log("Contract not loaded yet")
+      return
+    }
 
     try {
-      const [divisions, counts] = await contracts.missingRegistry.methods.getSortedDivision(false).call()
+      setIsLoading(true)
+      console.log("Fetching division stats...")
 
-      const stats = divisions.map((div, index) => ({
-        division: divisionNames[Number.parseInt(div)],
-        count: Number.parseInt(counts[index]),
+      // Get the total number of cases
+      const caseCounter = await contracts.missingRegistry.methods.caseCounter().call()
+      const totalCases = Number.parseInt(caseCounter) - 1 // Counter starts at 1
+
+      // Initialize counts for each division
+      const divisionCounts = Array(divisionNames.length).fill(0)
+
+      // Count cases by division
+      for (let i = 1; i <= totalCases; i++) {
+        try {
+          const person = await contracts.missingRegistry.methods.getMissingPerson(i).call()
+          const divisionIndex = Number.parseInt(person.lastSeen)
+          if (divisionIndex >= 0 && divisionIndex < divisionNames.length) {
+            divisionCounts[divisionIndex]++
+          }
+        } catch (error) {
+          console.log(`Error fetching case ${i}:`, error)
+          // Continue with next case
+        }
+      }
+
+      // Create stats array with division names and counts
+      const stats = divisionNames.map((name, index) => ({
+        division: name,
+        count: divisionCounts[index],
       }))
 
+      // Sort by count in descending order
+      stats.sort((a, b) => b.count - a.count)
+
       setDivisionStats(stats)
+      console.log("Division stats loaded:", stats)
     } catch (error) {
       console.error("Error fetching division stats:", error)
+      // Set some default data so UI doesn't show loading indefinitely
+      setDivisionStats(divisionNames.map((name) => ({ division: name, count: 0 })))
+    } finally {
+      setIsLoading(false)
     }
-  }, [contracts])
+  }, [contracts, divisionNames])
 
   useEffect(() => {
-    fetchDivisionStats()
+    if (contracts && contracts.missingRegistry) {
+      console.log("Contracts loaded, fetching division stats")
+      fetchDivisionStats()
+    }
   }, [contracts, fetchDivisionStats])
 
   const handleSearch = async (e) => {
@@ -81,12 +118,12 @@ const SearchMissingPerson = () => {
         setSearchResults(results)
       }
 
-      if (searchResults.length === 0) {
-        setMessage({
-          type: "info",
-          content: "No results found.",
-        })
-      }
+      // if (searchResults.length === 0) {
+      //   setMessage({
+      //     type: "info",
+      //     content: "No results found.",
+      //   })
+      // }
     } catch (error) {
       console.error("Search error:", error)
       setMessage({
@@ -166,10 +203,11 @@ const SearchMissingPerson = () => {
 
             <button
               type="submit"
-              className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-              disabled={isLoading}
+              className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline `}
+              // disabled={isLoading}
             >
-              {isLoading ? "Searching..." : "Search"}
+              {"Search"}
+          
             </button>
           </form>
         </div>
@@ -177,6 +215,9 @@ const SearchMissingPerson = () => {
         <div>
           <h3 className="text-lg font-semibold mb-4">Missing Persons by Division</h3>
           <div className="bg-gray-100 p-4 rounded">
+            {/* {isLoading ? (
+              <p className="text-gray-500">Loading statistics...</p>
+            ) :  */}
             {divisionStats.length > 0 ? (
               <ul>
                 {divisionStats.map((stat, index) => (
@@ -187,7 +228,7 @@ const SearchMissingPerson = () => {
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-500">Loading statistics...</p>
+              <p className="text-gray-500">No statistics available</p>
             )}
           </div>
         </div>
