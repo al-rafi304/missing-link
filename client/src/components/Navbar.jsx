@@ -84,11 +84,11 @@ const Navbar = () => {
                 </>
               )}
 
-              {userRole === 2 && ( // Investigator
+              {/* {userRole === 2 && ( // Investigator
                 <Link to="/my-cases" className="hover:text-blue-200">
                   My Cases
                 </Link>
-              )}
+              )} */}
             </>
           )}
         </div>
